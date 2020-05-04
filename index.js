@@ -29,6 +29,7 @@ let tail = 0;
 let head = 0;
 
 var foodCoord = null;
+var hadFood = false;
 
 var score = 0;
 
@@ -75,6 +76,10 @@ var movePlayer = function() {
         let hasEaten = checkAndUpdateScore(nextPosition);
         let secondCell = 0;
         if (hasEaten) {
+            hadFood = true;
+        } 
+        if (hadFood && tail == 0) {
+            hadFood = false;
             let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
             svg.setAttribute('width', 10);
             svg.setAttribute('height', 10);
