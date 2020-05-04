@@ -4,13 +4,13 @@ let board = {
     top: 0,
     left: 0,
     getUpperBoundX: function() {
-        return this.width + this.left - 10;
+        return this.width + this.left - 2;
     },
     getLowerBoundX: function() {
         return this.left + 2;
     },
     getUpperBoundY: function() {
-        return this.height + this.top - 10;
+        return this.height + this.top - 2;
     },
     getLowerBoundY: function() {
         return this.top + 2;
@@ -136,7 +136,10 @@ var spawnFood = function() {
     food.style.position = 'absolute';
     food.style.top = newFoodLoc.top + 'px';
     food.style.left = newFoodLoc.left + 'px';
-    foodCoord = newFoodLoc;
+    foodCoord = {
+        top: newFoodLoc.top + 6,
+        left: newFoodLoc.left + 6
+    }
     food.innerHTML = '<circle cx="6" cy="6" r="6" fill="cyan"/>';
 }
 

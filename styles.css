@@ -4,5 +4,7 @@ body {
 }
 
 #board {
+    border: 3px solid black;
+    box-shadow: 4px 7px 3px grey;
     margin: auto;
 }
