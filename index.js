@@ -1,19 +1,24 @@
 let board = {
+    boardElement: null,
     width: 500,
     height: 500,
-    top: 0,
-    left: 0,
+    top: function() {
+        return this.boardElement != null ? this.boardElement.getBoundingClientRect().top : 0;
+    },
+    left: function() {
+        return this.boardElement != null ? this.boardElement.getBoundingClientRect().left : 0;
+    },
     getUpperBoundX: function() {
-        return this.width + this.left - 2;
+        return this.width + this.left() - 2;
     },
     getLowerBoundX: function() {
-        return this.left + 2;
+        return this.left() + 2;
     },
     getUpperBoundY: function() {
-        return this.height + this.top - 2;
+        return this.height + this.top() - 2;
     },
     getLowerBoundY: function() {
-        return this.top + 2;
+        return this.top() + 2;
     }
 }
 
@@ -111,13 +116,13 @@ var movePlayer = function() {
 }
 
 var getRandomCoord = function() {
-    let top = board.top + Math.random() * board.height;
-    while (top >= board.getUpperBoundY() || top <= board.getLowerBoundY()) {
-        top = board.top + Math.random() * board.height;
+    let top = board.top() + Math.random() * board.height;
+    while (top >= board.getUpperBoundY() - 3 || top <= board.getLowerBoundY() + 3) {
+        top = board.top() + Math.random() * board.height;
     }
-    let left = board.left + Math.random() * board.width;
-    while (left >= board.getUpperBoundX() || left <= board.getLowerBoundX()) {
-        left = board.left + Math.random() * board.width;
+    let left = board.left() + Math.random() * board.width;
+    while (left >= board.getUpperBoundX() - 3 || left <= board.getLowerBoundX() + 3) {
+        left = board.left() + Math.random() * board.width;
     }
     return {top, left};
 }
@@ -162,8 +167,12 @@ var checkIfBitten = function(newPosition) {
 }
 
 var checkAndUpdateScore = function(newPosition) {
-    let distance = getDistance(newPosition, foodCoord);
-    if (distance < (6 + 5)) {
+    let blockCenter = {
+        top: newPosition.top + 5,
+        left: newPosition.left + 5
+    }
+    let distance = getDistance(blockCenter, foodCoord);
+    if (distance < (5 + 5)) {
         spawnFood();
         score++;
         document.getElementById('score').innerText = score;
@@ -223,17 +232,18 @@ window.onload = function() {
     let boardElement = document.getElementById('board');
     boardElement.style.width = board.width + 'px';
     boardElement.style.height = board.height + 'px';
-    board.top = boardElement.getBoundingClientRect().top;
-    board.left = boardElement.getBoundingClientRect().left;
+    board.boardElement = boardElement;
+    // board.top = boardElement.getBoundingClientRect().top;
+    // board.left = boardElement.getBoundingClientRect().left;
     boardElement.style.backgroundColor = 'blue';
     snakeBody = document.getElementsByClassName('snake');
     for (let i = 0; i < snakeBody.length; i++) {
         snakeBody[i].style.position = 'absolute';
-        snakeBody[i].style.top = player.y + board.top + 'px';
-        snakeBody[i].style.left = player.x + i * 10 + board.left + 'px';
+        snakeBody[i].style.top = player.y + board.top() + 'px';
+        snakeBody[i].style.left = player.x + i * 10 + board.left() + 'px';
         let position = {}
-        position.left = player.x + i * 10 + board.left;
-        position.top = player.y + board.top;
+        position.left = player.x + i * 10 + board.left();
+        position.top = player.y + board.top();
         player.positions.push(position);
     }
     game();
