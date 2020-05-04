@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Snake game</title>
+        <link rel="stylesheet" href="styles.css"/>
+    </head>
+    <body>
+        <h1>Snake Game</h1>
+        <h4>Score: <span id="score">0</span></h4>
+        <div id="board">
+            <div id="player">
+                <svg width="10" height="10" class="snake">
+                    <rect width="8" height="8" style="fill:rgb(255, 145, 0);" />
+                </svg>
+                <svg width="10" height="10" class="snake">
+                    <rect width="8" height="8" style="fill:rgb(0, 174, 255);" />
+                </svg>
+                <svg width="10" height="10" class="snake">
+                    <rect width="8" height="8" style="fill:rgb(119, 0, 255);" />
+                </svg>
+                <svg width="10" height="10" class="snake">
+                    <rect width="8" height="8" style="fill:rgb(0,255, 0);" />
+                </svg>
+            </div>
+            <div id="over" style="display: none; text-align: center;">
+                <h1>GAME OVER</h1>
+                <button onclick="reset()">reset</button>
+            </div>
+            <svg width="100" height="100" id="food">
+
+            </svg>
+        </div>
+        <script src="index.js"></script>
+    </body>
+</html>

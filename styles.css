@@ -1,0 +1,8 @@
+body {
+    background-color: rgb(161, 221, 221);
+    text-align: center;
+}
+
+#board {
+    margin: auto;
+}
