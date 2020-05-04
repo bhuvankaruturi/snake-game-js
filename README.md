@@ -1,1 +1,1 @@
-"### Snake Game using JavaScript" 
+#### Snake Game using Javascript 
