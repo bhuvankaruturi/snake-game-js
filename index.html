@@ -7,39 +7,44 @@
     <body>
         <h1>Snake Game</h1>
         <h4>Score: <span id="score">0</span></h4>
-        <div id="board">
-            <div id="player">
-                <svg width="16" height="16" class="snake">
-                    <rect width="16" height="16" style="fill:rgb(0,255, 0);" />
-                </svg>
-                <svg width="16" height="16" class="snake">
-                    <rect width="16" height="16" style="fill:rgb(0,255, 0);" />
-                </svg>
-                <svg width="16" height="16" class="snake">
-                    <rect width="16" height="16" style="fill:rgb(0,255, 0);" />
-                </svg>
-                <svg width="16" height="16" class="snake" transform="rotate(-90)">
-                    <!-- <path d="M0,8 a1,1 0 0,0 16,0" fill="rgb(255, 0, 0)" /> -->
-                    <circle id="e1_circle" cx="-796.8920288085938" cy="-54.365928649902344" 
-                    style="stroke: black; stroke-width: 1px;fill:#42FFA0;" r="53.45" 
-                    transform="matrix(0.152876 0 0 0.152876 130.076 16.5613)"/>
-                    <ellipse id="e3_ellipse" cx="-379.77764892578125" cy="-185.92002868652344" 
-                    style="fill:black;stroke:black;stroke-width:1px;" 
-                    rx="10.64050006866455" ry="17.4242000579834" 
-                    transform="matrix(0.261762 -0.0366327 0.0366327 0.261762 110.186 43.4596)"/>
-                    <ellipse id="e1_ellipse" cx="-481.87652587890625" cy="-208.04823303222656" 
-                    style="fill:black;stroke:black;stroke-width:1px;" 
-                    rx="10.6405" ry="17.4242" 
-                    transform="matrix(0.271235 -0.0064775 0.00659337 0.266469 143.923 60.7091)"/>
+        <p>Use WASD, Arrow Keys or Swipe on touch enable screens to control the Snake</p>
+        <div class="flex-container">
+            <div class="item"></div>
+            <div id="board">
+                <div id="player">
+                    <svg width="16" height="16" class="snake">
+                        <rect width="16" height="16" style="fill:rgb(0,255, 0);" />
+                    </svg>
+                    <svg width="16" height="16" class="snake">
+                        <rect width="16" height="16" style="fill:rgb(0,255, 0);" />
+                    </svg>
+                    <svg width="16" height="16" class="snake">
+                        <rect width="16" height="16" style="fill:rgb(0,255, 0);" />
+                    </svg>
+                    <svg width="16" height="16" class="snake" transform="rotate(-90)">
+                        <!-- <path d="M0,8 a1,1 0 0,0 16,0" fill="rgb(255, 0, 0)" /> -->
+                        <circle id="e1_circle" cx="-796.8920288085938" cy="-54.365928649902344" 
+                        style="stroke: black; stroke-width: 1px;fill:#42FFA0;" r="53.45" 
+                        transform="matrix(0.152876 0 0 0.152876 130.076 16.5613)"/>
+                        <ellipse id="e3_ellipse" cx="-379.77764892578125" cy="-185.92002868652344" 
+                        style="fill:black;stroke:black;stroke-width:1px;" 
+                        rx="10.64050006866455" ry="17.4242000579834" 
+                        transform="matrix(0.261762 -0.0366327 0.0366327 0.261762 110.186 43.4596)"/>
+                        <ellipse id="e1_ellipse" cx="-481.87652587890625" cy="-208.04823303222656" 
+                        style="fill:black;stroke:black;stroke-width:1px;" 
+                        rx="10.6405" ry="17.4242" 
+                        transform="matrix(0.271235 -0.0064775 0.00659337 0.266469 143.923 60.7091)"/>
+                    </svg>
+                </div>
+                <div id="gameover" style="display: none; text-align: center; z-index: 1; position: absolute;">
+                    <h1>GAME OVER</h1>
+                    <button onclick="reset()">reset</button>
+                </div>
+                <svg width="20" height="20" id="food">
                 </svg>
             </div>
-            <div id="gameover" style="display: none; text-align: center; z-index: 1; position: absolute;">
-                <h1>GAME OVER</h1>
-                <button onclick="reset()">reset</button>
+            <div class="item">
             </div>
-            <svg width="20" height="20" id="food">
-
-            </svg>
         </div>
         <script src="./js/index.js"></script>
     </body>

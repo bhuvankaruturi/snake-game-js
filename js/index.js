@@ -93,6 +93,14 @@ var Status;
     Status[Status["RUNNING"] = 1] = "RUNNING";
     Status[Status["GAMEOVER"] = 2] = "GAMEOVER";
 })(Status || (Status = {}));
+var UserAction;
+(function (UserAction) {
+    UserAction[UserAction["LEFT"] = 0] = "LEFT";
+    UserAction[UserAction["RIGHT"] = 1] = "RIGHT";
+    UserAction[UserAction["UP"] = 2] = "UP";
+    UserAction[UserAction["DOWN"] = 3] = "DOWN";
+    UserAction[UserAction["TOGGLE_PAUSE"] = 4] = "TOGGLE_PAUSE";
+})(UserAction || (UserAction = {}));
 var rotation = {
     top: {
         "1": 0,
@@ -108,21 +116,31 @@ var Game = /** @class */ (function () {
         this.status = Status.PAUSED;
         this.snake = null;
         this.board = null;
+        this.swipeStart = {
+            X: null,
+            Y: null
+        };
+        this.handleKeyPress = function (event) {
+            var action = -1;
+            action = keyMap['' + event.keyCode];
+            if (action >= 0)
+                this.updateMovement(action);
+        };
         this.score = 0;
         this.status = Status.RUNNING;
-        this.board = new Board(document.getElementById('board'), 500, 500);
+        this.board = new Board(document.getElementById('board'), 512, 512);
         this.snake = new Snake(document.getElementById('player'), document.getElementsByClassName('snake'));
-        this.refreshRate = 90;
+        this.refreshRate = 120;
         this.movement = {
             axis: 'left',
             direction: 1,
-            stride: 15
+            stride: 16
         };
         this.food = {
             element: document.getElementById('food'),
             coord: null,
             colorCycle: 0,
-            foodSvg: "<circle cx=\"10\" cy=\"10\" r=\"9\" style=\"fill:#e87672\"/>",
+            foodSvg: "<circle cx=\"8\" cy=\"8\" r=\"8\" style=\"fill:#e87672\"/>",
             blinkInterval: null
         };
         this.food.element.style.position = 'absolute';
@@ -178,11 +196,9 @@ var Game = /** @class */ (function () {
             this.handleGameEnd();
         }
         // check if the snake will eat food in next position
-        if (willCollide([nextPos], this.food.coord, 17)) {
+        if (willCollide([nextPos], this.food.coord, 16)) {
             this.hadFood = true;
-            this.score++;
-            document.getElementById('score').textContent = '' + this.score;
-            this.spawnFood();
+            this.handleScoreIncrease();
         }
         var secondBodyPart = this.snake.getHead();
         if (this.hadFood && this.snake.getTail() == 0) {
@@ -202,6 +218,16 @@ var Game = /** @class */ (function () {
         this.snake.body[this.snake.getHead()].setAttribute('transform', "rotate(" + rotation[this.movement.axis]['' + this.movement.direction] + ")");
         this.snake.body[secondBodyPart].innerHTML = Snake.bodySvg;
     };
+    Game.prototype.handleScoreIncrease = function () {
+        this.score++;
+        document.getElementById('score').textContent = '' + this.score;
+        this.spawnFood();
+        this.pause();
+        if (this.score % 5 == 0) {
+            this.refreshRate = this.refreshRate * 0.96;
+        }
+        this.resume();
+    };
     Game.prototype.handleGameEnd = function () {
         this.pause();
         this.status = Status.GAMEOVER;
@@ -212,7 +238,7 @@ var Game = /** @class */ (function () {
     };
     Game.prototype.spawnFood = function () {
         var foodPos = getRandomCoord(this.board);
-        while (willCollide(this.snake.positions, foodPos, 14))
+        while (willCollide(this.snake.positions, foodPos, 16))
             foodPos = getRandomCoord(this.board);
         this.food.element.style.top = this.board.getAbsoluteY(foodPos.top) + 'px';
         this.food.element.style.left = this.board.getAbsoluteX(foodPos.left) + 'px';
@@ -232,13 +258,13 @@ var Game = /** @class */ (function () {
         newSvg.innerHTML = Snake.headSvg;
         this.snake.snakeDiv.appendChild(newSvg);
     };
-    Game.prototype.updateMovement = function (event) {
+    Game.prototype.updateMovement = function (action) {
         if (this.status == Status.GAMEOVER)
             return;
-        if (this.status == Status.PAUSED && event.keyCode != 32)
+        if (this.status == Status.PAUSED && action != UserAction.TOGGLE_PAUSE)
             return;
-        switch (event.keyCode) {
-            case 37: // left
+        switch (action) {
+            case UserAction.LEFT: // left
                 if (this.movement.axis == 'left')
                     break;
                 else {
@@ -246,7 +272,7 @@ var Game = /** @class */ (function () {
                     this.movement.direction = -1;
                     break;
                 }
-            case 38: // up
+            case UserAction.UP: // up
                 if (this.movement.axis == 'top')
                     break;
                 else {
@@ -254,7 +280,7 @@ var Game = /** @class */ (function () {
                     this.movement.direction = -1;
                     break;
                 }
-            case 39: // right
+            case UserAction.RIGHT: // right
                 if (this.movement.axis == 'left')
                     break;
                 else {
@@ -262,7 +288,7 @@ var Game = /** @class */ (function () {
                     this.movement.direction = 1;
                     break;
                 }
-            case 40: // down
+            case UserAction.DOWN: // down
                 if (this.movement.axis == 'top')
                     break;
                 else {
@@ -270,14 +296,41 @@ var Game = /** @class */ (function () {
                     this.movement.direction = 1;
                     break;
                 }
-            case 32: // space
+            case UserAction.TOGGLE_PAUSE: // space
                 if (this.status == Status.RUNNING) {
                     this.pause();
                 }
                 else {
                     this.resume();
                 }
+                break;
         }
+    };
+    Game.prototype.handleTouchStart = function (event) {
+        this.swipeStart.X = event.touches[0].clientX;
+        this.swipeStart.Y = event.touches[0].clientY;
+    };
+    Game.prototype.handleTouchMove = function (event) {
+        if (!this.swipeStart.X || !this.swipeStart.Y)
+            return;
+        var diffX = event.touches[0].clientX - this.swipeStart.X;
+        var diffY = event.touches[0].clientY - this.swipeStart.Y;
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            // horizontal movement
+            if (diffX < 0)
+                this.updateMovement(UserAction.LEFT);
+            else
+                this.updateMovement(UserAction.RIGHT);
+        }
+        else {
+            // vertical movement
+            if (diffY < 0)
+                this.updateMovement(UserAction.UP);
+            else
+                this.updateMovement(UserAction.DOWN);
+        }
+        this.swipeStart.X = null;
+        this.swipeStart.Y = null;
     };
     Game.prototype.pause = function () {
         if (this.status == Status.GAMEOVER)
@@ -310,6 +363,17 @@ var Game = /** @class */ (function () {
     Game.colors = ['#fc3503', '#fcdb03', '#03fcbe'];
     return Game;
 }());
+var keyMap = {
+    '37': UserAction.LEFT,
+    '65': UserAction.LEFT,
+    '38': UserAction.UP,
+    '87': UserAction.UP,
+    '39': UserAction.RIGHT,
+    '68': UserAction.RIGHT,
+    '40': UserAction.DOWN,
+    '83': UserAction.DOWN,
+    '32': UserAction.TOGGLE_PAUSE
+};
 var getDistance = function (a, b) {
     return Math.sqrt(Math.pow((a.top - b.top), 2) + Math.pow((a.left - b.left), 2));
 };
@@ -339,7 +403,9 @@ var reset = function (event) {
 };
 window.onload = function () {
     var game = new Game();
-    addEventListener('keydown', game.updateMovement.bind(game));
+    addEventListener('keydown', game.handleKeyPress.bind(game));
+    addEventListener('touchstart', game.handleTouchStart.bind(game));
+    addEventListener('touchmove', game.handleTouchMove.bind(game));
     addEventListener('resize', game.repositionOnResize.bind(game));
 };
 //# sourceMappingURL=index.js.map

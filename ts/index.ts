@@ -116,6 +116,14 @@ class Snake {
     GAMEOVER
  }
 
+ enum UserAction {
+    LEFT,
+    RIGHT,
+    UP,
+    DOWN,
+    TOGGLE_PAUSE
+ }
+
  type Axis = "top" | "left";
 
  interface GMovement {
@@ -154,24 +162,28 @@ class Snake {
     private food: Food;
     private hadFood: boolean;
     private static colors: Array<string> = ['#fc3503', '#fcdb03', '#03fcbe'];
+    private swipeStart: {[key: string]: number} = {
+        X: null,
+        Y: null
+    };
 
     constructor() {
         this.score = 0;
         this.status = Status.RUNNING;
-        this.board = new Board(document.getElementById('board'), 500, 500);
+        this.board = new Board(document.getElementById('board'), 512, 512);
         this.snake = new Snake(document.getElementById('player'),
             <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('snake'));
-        this.refreshRate = 90;
+        this.refreshRate = 120;
         this.movement = {
             axis: 'left',
             direction: 1,
-            stride: 15
+            stride: 16
         }
         this.food = {
             element: document.getElementById('food'),
             coord: null,
             colorCycle: 0,
-            foodSvg:  `<circle cx="10" cy="10" r="9" style="fill:#e87672"/>`,
+            foodSvg:  `<circle cx="8" cy="8" r="8" style="fill:#e87672"/>`,
             blinkInterval: null
         }
         this.food.element.style.position = 'absolute';
@@ -237,11 +249,9 @@ class Snake {
             this.handleGameEnd();
         }
         // check if the snake will eat food in next position
-        if (willCollide([nextPos], this.food.coord, 17)) {
+        if (willCollide([nextPos], this.food.coord, 16)) {
             this.hadFood = true;
-            this.score++;
-            document.getElementById('score').textContent = '' + this.score;
-            this.spawnFood();
+            this.handleScoreIncrease();
         }
         let secondBodyPart: number = this.snake.getHead();
         if (this.hadFood && this.snake.getTail() == 0) {
@@ -262,6 +272,17 @@ class Snake {
         this.snake.body[secondBodyPart].innerHTML = Snake.bodySvg;
     }
 
+    private handleScoreIncrease(): void {
+        this.score++;
+        document.getElementById('score').textContent = '' + this.score;
+        this.spawnFood();
+        this.pause();
+        if (this.score%5 == 0) {
+            this.refreshRate = this.refreshRate * 0.96;
+        }
+        this.resume();
+    }
+
     private handleGameEnd(): void {
         this.pause();
         this.status = Status.GAMEOVER;
@@ -273,7 +294,7 @@ class Snake {
 
     private spawnFood(): void {
         let foodPos = getRandomCoord(this.board);
-        while (willCollide(this.snake.positions, foodPos, 14)) foodPos = getRandomCoord(this.board);
+        while (willCollide(this.snake.positions, foodPos, 16)) foodPos = getRandomCoord(this.board);
         this.food.element.style.top = this.board.getAbsoluteY(foodPos.top) + 'px';
         this.food.element.style.left = this.board.getAbsoluteX(foodPos.left) + 'px';
         this.food.element.innerHTML = this.food.foodSvg;
@@ -294,13 +315,13 @@ class Snake {
         this.snake.snakeDiv.appendChild(newSvg);
     }
 
-    updateMovement(event: KeyboardEvent): void {
+    updateMovement(action: UserAction): void {
         if (this.status == Status.GAMEOVER)
             return;
-        if (this.status == Status.PAUSED && event.keyCode != 32)
+        if (this.status == Status.PAUSED && action != UserAction.TOGGLE_PAUSE)
             return;
-        switch(event.keyCode) {
-            case 37: // left
+        switch(action) {
+            case UserAction.LEFT: // left
                 if (this.movement.axis == 'left')
                     break;
                 else {
@@ -308,7 +329,7 @@ class Snake {
                     this.movement.direction = -1;
                     break;
                 }
-            case 38: // up
+            case UserAction.UP: // up
                 if (this.movement.axis == 'top')
                     break;
                 else {
@@ -316,7 +337,7 @@ class Snake {
                     this.movement.direction = -1;
                     break;
                 }
-            case 39: // right
+            case UserAction.RIGHT: // right
                 if (this.movement.axis == 'left')
                     break;
                 else {
@@ -324,7 +345,7 @@ class Snake {
                     this.movement.direction = 1;
                     break;
                 }
-            case 40: // down
+            case UserAction.DOWN: // down
                 if (this.movement.axis == 'top')
                     break;
                 else {
@@ -332,13 +353,48 @@ class Snake {
                     this.movement.direction = 1;
                     break;
                 }
-            case 32: // space
+            case UserAction.TOGGLE_PAUSE: // space
                 if (this.status == Status.RUNNING) {
                     this.pause();
                 } else {
                     this.resume();
                 }
+                break;
         }
+    }
+
+    handleKeyPress = function(event: KeyboardEvent) {
+        let action: UserAction = -1;
+        action = keyMap['' + event.keyCode];
+        if (action >= 0)
+            this.updateMovement(action);
+    }
+
+    handleTouchStart(event: TouchEvent): void {
+        this.swipeStart.X = event.touches[0].clientX;
+        this.swipeStart.Y = event.touches[0].clientY;
+    }
+
+    handleTouchMove(event: TouchEvent): void {
+        if (!this.swipeStart.X || !this.swipeStart.Y)
+            return;
+
+        let diffX: number = event.touches[0].clientX - this.swipeStart.X;
+        let diffY: number = event.touches[0].clientY - this.swipeStart.Y;
+        
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            // horizontal movement
+            if (diffX < 0) this.updateMovement(UserAction.LEFT);
+            else this.updateMovement(UserAction.RIGHT);
+        }
+        else {
+            // vertical movement
+            if (diffY < 0) this.updateMovement(UserAction.UP);
+            else this.updateMovement(UserAction.DOWN);
+        }
+
+        this.swipeStart.X = null;
+        this.swipeStart.Y = null;
     }
 
     private pause(): void {
@@ -371,6 +427,18 @@ class Snake {
     }
  }
 
+const keyMap: {[key: string]: UserAction} = {
+    '37': UserAction.LEFT,  
+    '65': UserAction.LEFT, // a
+    '38': UserAction.UP,
+    '87': UserAction.UP, // w
+    '39': UserAction.RIGHT,
+    '68': UserAction.RIGHT, // d
+    '40': UserAction.DOWN,
+    '83': UserAction.DOWN, // s
+    '32': UserAction.TOGGLE_PAUSE
+}
+
  const getDistance = function(a: GPosition, b: GPosition) : number {
      return Math.sqrt(Math.pow((a.top - b.top), 2) + Math.pow((a.left - b.left), 2));
  }
@@ -396,12 +464,14 @@ class Snake {
     return randPos;
  }
 
- const reset = function(event: MouseEvent): void {
-     location.reload();
- }
+const reset = function(event: MouseEvent): void {
+    location.reload();
+}
 
 window.onload = function() {
     let game: Game = new Game();
-    addEventListener('keydown', game.updateMovement.bind(game));
+    addEventListener('keydown', game.handleKeyPress.bind(game));
+    addEventListener('touchstart', game.handleTouchStart.bind(game));
+    addEventListener('touchmove', game.handleTouchMove.bind(game));
     addEventListener('resize', game.repositionOnResize.bind(game));
 }

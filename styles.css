@@ -3,9 +3,28 @@ body {
     text-align: center;
 }
 
+h4 {
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+p {
+    margin: auto 1px;
+    padding: 0;
+}
+
+.flex-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+.item {
+    flex-basis: 15%;
+}
+
 #board {
     background-color: blue;
     border: 3px solid black;
     box-shadow: 4px 7px 3px grey;
-    margin: auto;
 }
