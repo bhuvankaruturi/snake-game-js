@@ -1,7 +1,7 @@
-body {
+html, body {
     background-color: rgb(161, 221, 221);
     text-align: center;
-    overscroll-behavior: 'none';
+    overscroll-behavior-y: contain;
 }
 
 h4 {
