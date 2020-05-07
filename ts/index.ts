@@ -19,19 +19,19 @@ class Board {
     }
 
     getUpperBoundX(): number {
-        return this.width - 14;
+        return this.width - 16;
     }
 
     getUpperBoundY(): number {
-        return this.height - 14;
+        return this.height - 16;
     }
 
     getLowerBoundX(): number {  
-        return 1;
+        return 0;
     }
 
     getLowerBoundY(): number {
-        return 1;
+        return 0;
     }
 
     getAbsoluteX(x: number): number {
@@ -113,7 +113,7 @@ class Snake {
  enum Status {
     PAUSED,
     RUNNING,
-    GAMEOVER
+    GAMEOVER,
  }
 
  enum UserAction {
@@ -197,7 +197,7 @@ class Snake {
             svgElements[i].style.position = 'absolute';
             let position: GPosition = {
                 top: this.board.height/2,
-                left: this.board.width/2 + (i * this.movement.stride) - 25
+                left: this.board.width/2 + (i * this.movement.stride) - (svgElements.length * 16)
             } 
             svgElements[i].style.top = this.board.getAbsoluteY(position.top) + 'px';
             svgElements[i].style.left = this.board.getAbsoluteX(position.left) + 'px';
@@ -231,16 +231,16 @@ class Snake {
         let nextPos: GPosition = {...this.snake.getHeadPosition()};
         nextPos[this.movement.axis] = nextPos[this.movement.axis] + this.movement.direction * this.movement.stride;
         if (nextPos.left < this.board.getLowerBoundX()) {
-            nextPos.left = this.board.getUpperBoundX() - 0.5;
+            nextPos.left = this.board.getUpperBoundX();
         } 
         else if (nextPos.left > this.board.getUpperBoundX()) {
-            nextPos.left = this.board.getLowerBoundX() + 0.5;
+            nextPos.left = this.board.getLowerBoundX();
         }
         if (nextPos.top < this.board.getLowerBoundY()) {
-            nextPos.top = this.board.getUpperBoundY() - 0.5;
+            nextPos.top = this.board.getUpperBoundY();
         }
         else if (nextPos.top > this.board.getUpperBoundY()) {
-            nextPos.top = this.board.getLowerBoundY() + 0.5;
+            nextPos.top = this.board.getLowerBoundY();
         }
         // check if the snake will bite itself
         let positionsCopy: Array<GPosition> = [...this.snake.positions];
@@ -278,7 +278,7 @@ class Snake {
         this.spawnFood();
         this.pause();
         if (this.score%5 == 0) {
-            this.refreshRate = this.refreshRate * 0.96;
+            this.refreshRate = this.refreshRate * 0.95;
         }
         this.resume();
     }
@@ -294,7 +294,7 @@ class Snake {
 
     private spawnFood(): void {
         let foodPos = getRandomCoord(this.board);
-        while (willCollide(this.snake.positions, foodPos, 16)) foodPos = getRandomCoord(this.board);
+        while (willCollide(this.snake.positions, foodPos, 17)) foodPos = getRandomCoord(this.board);
         this.food.element.style.top = this.board.getAbsoluteY(foodPos.top) + 'px';
         this.food.element.style.left = this.board.getAbsoluteX(foodPos.left) + 'px';
         this.food.element.innerHTML = this.food.foodSvg;
@@ -416,14 +416,18 @@ class Snake {
     }
 
     repositionOnResize(event: UIEvent): void {
-        this.pause();
+        let paused = false;
+        if (this.status != Status.PAUSED) {
+            paused = true;
+            this.pause();
+        }
         for (let i: number = 0; i < this.snake.positions.length; i++) {
             this.snake.body[i].style.top = this.board.getAbsoluteY(this.snake.positions[i].top) + 'px';
             this.snake.body[i].style.left = this.board.getAbsoluteX(this.snake.positions[i].left) + 'px';
         }
         this.food.element.style.top = this.board.getAbsoluteY(this.food.coord.top) + 'px';
         this.food.element.style.left = this.board.getAbsoluteX(this.food.coord.left) + 'px';
-        this.resume();
+        if (paused) this.resume();
     }
  }
 
@@ -451,16 +455,22 @@ const keyMap: {[key: string]: UserAction} = {
  }
 
  const getRandomCoord = function(board: Board): GPosition {
+    let grid = {
+        nX: board.width / 16,
+        nY: board.height / 16
+    }
     let randPos: GPosition = {
-        top: Math.random() * (board.height - 8),
-        left: Math.random() * (board.width - 8)
+        top: Math.ceil(Math.random() * (grid.nX-1)),
+        left: Math.ceil(Math.random() * (grid.nY-1))
     }
-    while (randPos.top <= board.getLowerBoundY() || randPos.top >= board.getUpperBoundY()) {
-        randPos.top = Math.random() * (board.height - 2);
+    while (randPos.top <= 1 || randPos.top >= grid.nX) {
+        randPos.top = Math.ceil(Math.random() * (grid.nX-1));
     }
-    while (randPos.left <= board.getLowerBoundX() || randPos.left >= board.getUpperBoundX()) {
-        randPos.left = Math.random() * (board.width - 2)
+    while (randPos.left <= 1 || randPos.left >= grid.nY) {
+        randPos.left = Math.ceil(Math.random() * (grid.nY-1))
     }
+    randPos.top = randPos.top * 16;
+    randPos.left = randPos.left * 16;
     return randPos;
  }
 
