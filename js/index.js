@@ -124,10 +124,12 @@ var Game = /** @class */ (function () {
             var action = -1;
             action = keyMap['' + event.keyCode];
             if (action >= 0)
-                this.updateMovement(action);
+                this.userInputs.push(action);
+            // this.updateMovement(action);
         };
         this.score = 0;
         this.status = Status.RUNNING;
+        this.userInputs = [];
         this.board = new Board(document.getElementById('board'), 512, 512);
         this.snake = new Snake(document.getElementById('player'), document.getElementsByClassName('snake'));
         this.refreshRate = 120;
@@ -175,6 +177,8 @@ var Game = /** @class */ (function () {
         this.interval = setInterval(this.frameUpdate.bind(this), this.refreshRate);
     };
     Game.prototype.frameUpdate = function () {
+        if (this.userInputs.length > 0)
+            this.updateMovement(this.userInputs.shift());
         var nextPos = __assign({}, this.snake.getHeadPosition());
         nextPos[this.movement.axis] = nextPos[this.movement.axis] + this.movement.direction * this.movement.stride;
         if (nextPos.left < this.board.getLowerBoundX()) {
@@ -317,17 +321,21 @@ var Game = /** @class */ (function () {
         var diffY = event.touches[0].clientY - this.swipeStart.Y;
         if (Math.abs(diffX) > Math.abs(diffY)) {
             // horizontal movement
+            // if (diffX < 0) this.updateMovement(UserAction.LEFT);
+            // else this.updateMovement(UserAction.RIGHT);
             if (diffX < 0)
-                this.updateMovement(UserAction.LEFT);
+                this.userInputs.push(UserAction.LEFT);
             else
-                this.updateMovement(UserAction.RIGHT);
+                this.userInputs.push(UserAction.RIGHT);
         }
         else {
             // vertical movement
+            // if (diffY < 0) this.updateMovement(UserAction.UP);
+            // else this.updateMovement(UserAction.DOWN);
             if (diffY < 0)
-                this.updateMovement(UserAction.UP);
+                this.userInputs.push(UserAction.UP);
             else
-                this.updateMovement(UserAction.DOWN);
+                this.userInputs.push(UserAction.DOWN);
         }
         this.swipeStart.X = null;
         this.swipeStart.Y = null;
@@ -339,13 +347,18 @@ var Game = /** @class */ (function () {
             clearInterval(this.interval);
         if (this.food.blinkInterval)
             clearInterval(this.food.blinkInterval);
-        this.interval = null;
+        this.interval = setInterval(function () {
+            if (this.userInputs.length > 0)
+                this.updateMovement(this.userInputs.shift());
+        }.bind(this), 100);
         this.food.blinkInterval = null;
         this.status = Status.PAUSED;
     };
     Game.prototype.resume = function () {
         if (this.status == Status.GAMEOVER)
             return;
+        clearInterval(this.interval);
+        this.interval = null;
         this.blinkFood();
         this.moveSnake();
         this.status = Status.RUNNING;
