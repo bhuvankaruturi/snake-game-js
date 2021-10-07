@@ -9,12 +9,14 @@ var __assign = (this && this.__assign) || function () {
     };
     return __assign.apply(this, arguments);
 };
-var __spreadArrays = (this && this.__spreadArrays) || function () {
-    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
-    for (var r = Array(s), k = 0, i = 0; i < il; i++)
-        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-            r[k] = a[j];
-    return r;
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
 };
 var Board = /** @class */ (function () {
     function Board(element, width, height) {
@@ -80,6 +82,13 @@ var Snake = /** @class */ (function () {
         this.positions.push(__assign({}, position));
         this.head = this.positions.length - 1;
     };
+    Snake.prototype.insertAt = function (position, index) {
+        if (index < 0 || index >= this.positions.length)
+            return;
+        this.positions.splice(index, 0, position);
+        this.head = index;
+        this.tail = (index + 1) % this.positions.length;
+    };
     Snake.prototype.updatePostion = function (index, newPos) {
         this.positions[index] = __assign({}, newPos);
     };
@@ -125,7 +134,6 @@ var Game = /** @class */ (function () {
             action = keyMap['' + event.keyCode];
             if (action >= 0)
                 this.userInputs.push(action);
-            // this.updateMovement(action);
         };
         this.score = 0;
         this.status = Status.RUNNING;
@@ -194,7 +202,7 @@ var Game = /** @class */ (function () {
             nextPos.top = this.board.getLowerBoundY();
         }
         // check if the snake will bite itself
-        var positionsCopy = __spreadArrays(this.snake.positions);
+        var positionsCopy = __spreadArray([], this.snake.positions, true);
         positionsCopy.splice(this.snake.getTail(), 1);
         if (willCollide(positionsCopy, nextPos, this.movement.stride)) {
             this.handleGameEnd();
@@ -205,10 +213,11 @@ var Game = /** @class */ (function () {
             this.handleScoreIncrease();
         }
         var secondBodyPart = this.snake.getHead();
-        if (this.hadFood && this.snake.getTail() == 0) {
-            this.hadFood = false;
-            this.createNewBodyPart(nextPos);
-            this.snake.insert(nextPos);
+        if (this.hadFood && this.score % 3 === 0) {
+            var insertIndex = this.snake.getTail();
+            secondBodyPart = insertIndex === 0 ? secondBodyPart + 1 : secondBodyPart;
+            this.createNewBodyPart(nextPos, insertIndex);
+            this.snake.insertAt(nextPos, insertIndex);
         }
         else {
             var tail = this.snake.getTail();
@@ -218,9 +227,10 @@ var Game = /** @class */ (function () {
             this.snake.setHead(tail);
             this.snake.setTail((tail + 1) % this.snake.getLength());
         }
-        this.snake.body[this.snake.getHead()].innerHTML = Snake.headSvg;
-        this.snake.body[this.snake.getHead()].setAttribute('transform', "rotate(" + rotation[this.movement.axis]['' + this.movement.direction] + ")");
         this.snake.body[secondBodyPart].innerHTML = Snake.bodySvg;
+        this.snake.body[this.snake.getHead()].innerHTML = Snake.headSvg;
+        this.snake.body[this.snake.getHead()].setAttribute('transform', "rotate(" + rotation[this.movement.axis]['' + this.movement.direction] + ") scale(" + (this.hadFood ? 1.3 : 1) + ")");
+        this.hadFood = false;
     };
     Game.prototype.handleScoreIncrease = function () {
         this.score++;
@@ -250,7 +260,7 @@ var Game = /** @class */ (function () {
         this.food.colorCycle = 0;
         this.food.coord = __assign({}, foodPos);
     };
-    Game.prototype.createNewBodyPart = function (nextPos) {
+    Game.prototype.createNewBodyPart = function (nextPos, index) {
         var newSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         newSvg.setAttribute('width', '16');
         newSvg.setAttribute('height', '16');
@@ -260,7 +270,7 @@ var Game = /** @class */ (function () {
         newSvg.style.top = this.board.getAbsoluteY(nextPos.top) + 'px';
         newSvg.style.left = this.board.getAbsoluteX(nextPos.left) + 'px';
         newSvg.innerHTML = Snake.headSvg;
-        this.snake.snakeDiv.appendChild(newSvg);
+        this.snake.snakeDiv.insertBefore(newSvg, this.snake.snakeDiv.children[index]);
     };
     Game.prototype.updateMovement = function (action) {
         if (this.status == Status.GAMEOVER)
@@ -321,8 +331,6 @@ var Game = /** @class */ (function () {
         var diffY = event.touches[0].clientY - this.swipeStart.Y;
         if (Math.abs(diffX) > Math.abs(diffY)) {
             // horizontal movement
-            // if (diffX < 0) this.updateMovement(UserAction.LEFT);
-            // else this.updateMovement(UserAction.RIGHT);
             if (diffX < 0)
                 this.userInputs.push(UserAction.LEFT);
             else
@@ -330,8 +338,6 @@ var Game = /** @class */ (function () {
         }
         else {
             // vertical movement
-            // if (diffY < 0) this.updateMovement(UserAction.UP);
-            // else this.updateMovement(UserAction.DOWN);
             if (diffY < 0)
                 this.userInputs.push(UserAction.UP);
             else

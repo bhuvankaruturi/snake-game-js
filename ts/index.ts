@@ -104,6 +104,14 @@ class Snake {
         this.head = this.positions.length - 1;
     }
 
+    insertAt(position: GPosition, index: number): void {
+        if (index < 0 || index >= this.positions.length)
+            return;
+        this.positions.splice(index, 0, position);
+        this.head = index;
+        this.tail = (index + 1)%this.positions.length;
+    }
+
     updatePostion(index: number, newPos: GPosition): void {
         this.positions[index] = {...newPos};
     }
@@ -257,10 +265,11 @@ class Snake {
             this.handleScoreIncrease();
         }
         let secondBodyPart: number = this.snake.getHead();
-        if (this.hadFood && this.snake.getTail() == 0) {
-            this.hadFood = false;
-            this.createNewBodyPart(nextPos);
-            this.snake.insert(nextPos);
+        if (this.hadFood && this.score%3 === 0) {
+            let insertIndex = this.snake.getTail();
+            secondBodyPart = insertIndex === 0 ? secondBodyPart + 1 : secondBodyPart;
+            this.createNewBodyPart(nextPos, insertIndex);
+            this.snake.insertAt(nextPos, insertIndex);
         } else {
             let tail: number = this.snake.getTail();
             this.snake.body[tail].style.left = this.board.getAbsoluteX(nextPos.left) + 'px';
@@ -269,10 +278,11 @@ class Snake {
             this.snake.setHead(tail);
             this.snake.setTail((tail+1) % this.snake.getLength()); 
         }
+        this.snake.body[secondBodyPart].innerHTML = Snake.bodySvg;
         this.snake.body[this.snake.getHead()].innerHTML = Snake.headSvg;
         this.snake.body[this.snake.getHead()].setAttribute('transform', 
-            `rotate(${rotation[this.movement.axis]['' + this.movement.direction]})`);
-        this.snake.body[secondBodyPart].innerHTML = Snake.bodySvg;
+            `rotate(${rotation[this.movement.axis]['' + this.movement.direction]}) scale(${this.hadFood?1.3:1})`);
+        this.hadFood = false;
     }
 
     private handleScoreIncrease(): void {
@@ -305,7 +315,7 @@ class Snake {
         this.food.coord = {...foodPos};
     }
 
-    private createNewBodyPart(nextPos: GPosition): void {
+    private createNewBodyPart(nextPos: GPosition, index: number): void {
         let newSvg: SVGSVGElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         newSvg.setAttribute('width', '16');
         newSvg.setAttribute('height', '16');
@@ -315,7 +325,7 @@ class Snake {
         newSvg.style.top = this.board.getAbsoluteY(nextPos.top) + 'px';
         newSvg.style.left = this.board.getAbsoluteX(nextPos.left) + 'px';
         newSvg.innerHTML = Snake.headSvg;
-        this.snake.snakeDiv.appendChild(newSvg);
+        this.snake.snakeDiv.insertBefore(newSvg, this.snake.snakeDiv.children[index]);
     }
 
     updateMovement(action: UserAction): void {
